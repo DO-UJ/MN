@@ -1,152 +1,109 @@
 //Dawid Oleksy
-#include <iostream>
-#include <cstdlib>
-#include <cmath>
+#include <iostream>   
 #include <math.h>
-#include <string.h>
 
 using namespace std;
 
-//SOR FOR SPARSE-BANDED MATRIXES,
-// a1 c1 0  0
-// b1 a2 c2 0 
-// 0  b2 a3 c3
-// 0  0  b3 a4
-//
-// M, number of bands
-// N x N, size of A
-// max_tries, number of iterations
-// w is parameter of SOR
 
 
-//EDIT:przyk³adowy 1 i 2 ok
 
-class Sparse_and_Band_matrix_SOR {
+double secant(double (*f)(double),double a,double b,int M,double delta,double fa,double fb)
+{
+    double xm, x0, c,fa1,fb1;
+    double max1=M;
+ fa1=fa;
+ fb1=fb;
+ double fx0;
+        do {
+			
+            
+            x0 = (a * fb1 - b * fa1) / (fb1 - fa1);
+            fx0=(*f)(x0);max1-=1;if(max1==0){return x0;}
+            c = fa *fx0;
+ 
+           
+            a = b;
+            b = x0;
+            fa1=fb1;
+            fb1=fx0;
+            if (c == 0)
+                return x0;
+            xm = (a * fb1 - b * fa1) / (fb1 - fa1);
+            
+        } while (fabs(xm - x0) > delta); 
+                                
+       
+    
+     return x0;
+}
+ double bisection(double (*f)(double),double a,double b,int M,double eps,double delta,double fa,double fb)
+{
+
+    bool p=true;
+    double fa1,fc;
+    double max1=M;
+    fa1=fa;
+    double c=(a+b)/2;
+    fc=(*f)(c);max1-=1;if(max1==0)return c;
+ 
+    while (fabs(fc)>eps)
+    {
+		
+		if(fabs(a-b)<0.10){double fb1=(*f)(b);max1-=1;if(max1==0)return c; return secant(*f,a,b,M,delta,fa,fb1);};
+		
+        if(p==true)
+        {p=false;}
+        
+        else
+        {c = (a+b)/2;
+        fc=(*f)(c);max1-=1;if(max1==0)return c;}
+        
+        if (fc==0)
+           return c;
+ 
+       
+        else if (fc*fa1 < 0)
+            b = c;
+        else
+            {a = c;
+            
+            
+            fa1=fc;}
+  
+    }
+  return c;
+}
+ 
+ 
+ 
+ 
+ 
+double wyznaczMiejsceZerowe(double (*f)(double),double a,double b,int M,double eps,double delta)
+{
+	;
 	
-public:
-    double **A;
-    int N,M,D;                  
-    double w;        
-    int max_tries;           
-    double *x0,*x;
-
-    Sparse_and_Band_matrix_SOR(double **wejscie, int rozmiar, int lb_wsteg, double parmtr, int max_tries1, double *x0_1, double *x1) {
-        A = wejscie;
-        N = rozmiar;M = lb_wsteg;D = M / 2;w = parmtr;
-        max_tries = max_tries1;
-        x0 = x0_1;x = x1;
-    }
-
-    double traverse_thru_matrix(int i, int j) {
-        int dij = i - j;
-        if (abs(dij) > M / 2)
-         return 0;
-        else {
-         if (dij == 0)
-         return A[D][j];
-         if (dij > 0)
-         return A[D + dij][i - dij];
-           else return A[D + dij][i];
-        }
-    }
-    void print_sparseband_matrix() {
-        for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-         cout << traverse_thru_matrix(i, j) << " ";
-            }
-            cout << endl;
-        }
-    }
-     void print_Vector() {
-      for (int i = 0; i < N; i++) {
-       cout << x0[i] << " ";
-        }
-    }
- double *count_R() {
-        double *V = new double[N];
-        for (int i = 0; i < N; i++) {
-         double wysz = traverse_thru_matrix(i, i);
-         V[i] = (wysz - wysz * w) * x0[i];
-         for (int j = i+1; j <= min(i + M / 2, N - 1); j++) {
-           double temp_pa = traverse_thru_matrix(i, j);
-            temp_pa = -w * temp_pa;
-            V[i] += temp_pa * x0[j];
-            }
-            V[i] += w * x[i];
-        }
-        return V;
-        }
-        
-        
- void main_f() {
-        for (int t = 0; t < max_tries; t++) {
-        double *b = count_R();
-        double *V = new double[N];
-        for (int i = 0; i < N; i++) {
-        V[i] = b[i];
-        for (int j = max(0,i-M/2); j < i; j++) {
-        double temp_pa = traverse_thru_matrix(i, j);
-        V[i] -= w * V[j] * temp_pa;
-         }
-        double temp_pa = traverse_thru_matrix(i, i);
-        V[i] = V[i] / temp_pa;
-           }
-        x0 = V;
-        }
-    }
-
+	double fb=(*f)(b);
+	double fa=(*f)(a);
+	if(fa==0) return a;
+	if(fb==0) return b;
+	M=M-2;
+	if(M==0) return (b - (((fb*(b-a)))/(fb-fa)));
+	if(fa * fb>0) return secant(*f,a,b,M,delta,fa,fb);
+	if(fa * fb<=0)
+	{
+		
+		
+	return bisection(*f,a,b,M,eps,delta,fa,fb);
+	}
+	
+	
+	
+	
 };
 
-int main() {
-    int N,M;
-    cin >> N;
-    cin >> M;
-    double **A = new double *[M];
-    double y[N],x[N];
-    double w;
-    int max_tries,band_length = N - (M - 1) / 2;
-    for (int i = 0; i < M / 2 + 1; i++) { //spsb wpisu wsteg
-        double *band = new double[band_length];
-        for (int q = 0; q < band_length; q++) {
-        double temp_pa;
-        cin >> temp_pa;
-        band[q] = temp_pa;
-        }
-        A[i] = band;
-        band_length++;
-    }
+	
 
-    band_length = band_length - 2;
-    for (int l = 0; l < M / 2; l++) {
-        double *band = new double[band_length];
-        for (int q = 0; q < band_length; q++) {
-        double temp_pa;
-        cin >> temp_pa;
-        band[q] = temp_pa;
-        }
-        A[l + M / 2 + 1] = band;
-        band_length--;
-    }
+	
 
-    for (int q = 0; q < N; q++) {
-    double temp_pa;
-    cin >> temp_pa;
-    y[q] = temp_pa;
-    }
-
-    for (int z = 0; z < N; z++) {
-    double temp_pa;
-    cin >> temp_pa;
-    x[z] = temp_pa;
-    }
-    cin >> w;
-    cin >> max_tries;
-    Sparse_and_Band_matrix_SOR macierz_wejsciowa(A, N, M, w, max_tries, x, y);
-    cout.precision(16);
-    cout<<scientific;
-    macierz_wejsciowa.main_f();
-    macierz_wejsciowa.print_Vector();
-    return 0;
-}
-
+	
 
